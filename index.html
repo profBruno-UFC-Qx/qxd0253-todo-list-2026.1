@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>todolist</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <form>
+    <label for="category"> Categoria: </label>
+    <select id="category" required>
+      <option value="estudo">Estudo</option>
+      <option value="lazer">Lazer</option>
+    </select>
+
+    <label for="description"> Descrição: </label>
+    <input type="text" id="description" required>
+
+    <label for="deadline"> Prazo: </label>
+    <input type="date" id="deadline">
+
+    <input type="submit">
+
+  </form>
+
+  <ul id="tasks">
+
+  </ul>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
