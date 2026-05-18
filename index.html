@@ -5,9 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>todolist</title>
+    <link rel="stylesheet" href="src/style.css">
   </head>
   <body>
-    <div id="app"></div>
     <form>
     <label for="category"> Categoria: </label>
     <select id="category" required>
@@ -22,12 +22,23 @@
     <input type="date" id="deadline">
 
     <input type="submit">
-
   </form>
 
-  <ul id="tasks">
+  <dialog>
+    <p>Tem certeza que você deseja apagar?</p>
+    <menu>
+      <button id="cancel" type="reset">Cancel</button>
+      <button id="confirm" type="submit">Confirm</button>
+    </menu>
+  </dialog>
 
-  </ul>
+  <section>
+    <h1>Tarefas</h1>
+    <hr>
+    <div id="tasks">
+
+    </div>
+  </section>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
