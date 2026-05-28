@@ -1,0 +1,32 @@
+#tasks {
+  display: flex;
+  flex-direction: column;
+}
+
+[type="checkbox"]:checked + span {
+  color: green;
+  text-decoration: line-through;
+}
+
+#tasks label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.category {
+  border-radius: 10px;
+  color: white;
+  padding: 5px;
+}
+
+.category.estudo {
+  background-color: cadetblue;
+}
+
+.category.lazer {
+  background-color: blueviolet;
+}
+
+.category.trabalho {
+  background-color: rgb(226, 43, 43);
+}

@@ -1,9 +1,0 @@
-#tasks {
-  display: flex;
-  flex-direction: column;
-}
-
-[type="checkbox"]:checked + span {
-  color: green;
-  text-decoration: line-through;
-}
