@@ -1,231 +1,39 @@
-import type {Category, StrapiCollectionResponse, StrapiSingleResponse, Todo} from "./types"
+import { AuthenticationService } from "./service/authenticationService"
 
-const form = document.querySelector("form") as HTMLFormElement
-const categorySelect = document.querySelector("select") as HTMLSelectElement
-const descriptionInput = document.getElementById("description") as HTMLInputElement
-const dateInput = document.getElementById("deadline") as  HTMLInputElement
+const form = document.querySelector('form') as HTMLFormElement
+const usernameInput = document.getElementById('username') as HTMLInputElement
+const passwordInput = document.getElementById('password') as HTMLInputElement
+const feedbackP = document.getElementById('feedback') as HTMLParagraphElement
 
-const confirmDialog = document.querySelector('dialog') as HTMLDialogElement
-const cancelButtonDialog = document.getElementById("cancel") as HTMLButtonElement
-const confirmButtonDialog = document.getElementById("confirm") as HTMLButtonElement
+const authService = new AuthenticationService()
 
-const divTasks = document.getElementById("tasks") as HTMLDivElement
-
-const selectCategory = document.getElementById("category") as HTMLSelectElement
-
-const BASE_URL = "http://localhost:1337/api"
-
-async function initilizeCategories() {
-  const url = `${BASE_URL}/categories`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
-      const result: StrapiCollectionResponse<Category> = await response.json();
-      for(let category of result.data) {
-        let option = document.createElement("option")
-        option.value = category.documentId
-        option.innerText = category.description
-        selectCategory.append(option)
-      }
-    } catch (error) {
-      console.error((error as Error).message);
-    }
-}
-
-async function loadTasks() {
-  const url = `${BASE_URL}/tasks?populate=category`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
-      const result: StrapiCollectionResponse<Todo> = await response.json();
-      todos = result.data
-    } catch (error) {
-      console.error((error as Error).message);
-    }
-
-  updateTodos()
-}
-
-async function createTask({description, category, done, deadline}: Omit<Todo, 'id' | 'documentId'>): Promise<Todo> {
-
-  const body = {
-    data : {
-      description,
-      category: category.documentId,
-      done,
-      deadline: deadline || null
-    }
-  }
-
-  const url = `${BASE_URL}/tasks/`;  
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      'Content-type': 'application/json'
-    },
-    body: JSON.stringify(body),
-  });
-
-   if (!response.ok) {
-    throw new Error(`Response status: ${response.status}`);
-  }
-  
-  const strapiResponse: StrapiSingleResponse<Todo> = await response.json()
-  return { ...strapiResponse.data, category }
-}
-
-async function deleteTask(id: string) {
-  const url = `${BASE_URL}/tasks/${id}`;  
-
-  const response = await fetch(url, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Response status: ${response.status}`);
-  }
-}
-
-
-function createCheckbox(todo: Todo): HTMLInputElement {
-  const checkbox = document.createElement('input') as HTMLInputElement
-  
-    checkbox.type = 'checkbox'
-    checkbox.addEventListener('change', () => {
-      todo.done = !todo.done
-    })
-
-    return checkbox
-}
- 
-function updateTodos() {
-  divTasks.innerHTML = ''
-  for(const todo of todos) {
-    const labelTask = createUiTask(todo)
-    divTasks.appendChild(labelTask)
-    
-  }
-}
-
-function createRemoveButton(todo: Todo): HTMLButtonElement {
-  const removeButton = document.createElement('button')
-  removeButton.innerText ='🗑️'
-  removeButton.addEventListener('click', () => {
-
-    async function deleteTaskListener() {
-      try {
-         await deleteTask(todo.documentId)
-         console.log("tyeste")
-         if(removeButton.parentElement && removeButton.parentElement.parentElement) {
-            todos = todos.filter( t => t.id != todo.id)
-            removeButton.parentElement.parentElement.remove()
-          }
-      } catch(error) {
-        console.log(error)
-      }
-      confirmDialog.close()
-    }
-    
-    confirmButtonDialog.addEventListener('click', deleteTaskListener)
-    cancelButtonDialog.addEventListener('click', () => {
-      confirmButtonDialog.removeEventListener('click', deleteTaskListener)
-      confirmDialog.close()
-    })
-
-    confirmDialog.showModal()
-  })
-
-  return removeButton
-}
-
-function createEditButton(todo: Todo, container: HTMLSpanElement, checkbox: HTMLInputElement): HTMLButtonElement {
-
-  const editButton = document.createElement('button')
-  editButton.innerText = '✏️'
-
-  let isEditing = false
-  editButton.addEventListener('click', () => {
-    if(!isEditing) {
-      container.contentEditable = 'true'
-      checkbox.disabled = true
-      editButton.innerText = '💾'
-    } else {
-       editButton.innerText = '✏️'
-       container.contentEditable = 'false'
-      checkbox.disabled = false``
-    }
-    isEditing = !isEditing
-  })
-
-  return editButton
-}
-
-function createUiTask(todo: Todo) {
-  const checkbox = createCheckbox(todo)
-
-  const labelTask = document.createElement('label') as HTMLLabelElement
-
-  const descriptionDiv = document.createElement('div')
-  descriptionDiv.appendChild(checkbox)
-
-  const spanDescription = document.createElement('span')
-  spanDescription.innerText = `${todo.description}`
-  descriptionDiv.appendChild(spanDescription)
-
-  const spanCategory = document.createElement('span')
-  spanCategory.innerText = `${todo.category.description}`
-  spanCategory.classList.add('category', todo.category.description.toLocaleLowerCase())
-  descriptionDiv.append(spanCategory)
-
-  const actionDiv = document.createElement('div')
-  const removeButton = createRemoveButton(todo)  
-  actionDiv.appendChild(removeButton)
-
-  const editButton = createEditButton(todo, spanDescription, checkbox)
-  actionDiv.appendChild(editButton)
-
-
-  labelTask.append(descriptionDiv, actionDiv)
-  return labelTask
-}
-
-
-let taskCounter = 0
-let todos: Todo[] = []
-
-initilizeCategories()
-loadTasks()
-
-form.addEventListener("submit", async (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault()
 
-  const categoryId = categorySelect.value
-  const description = descriptionInput.value
-  const deadline = dateInput.value
+  const response = await authService.login(
+    usernameInput.value,
+    passwordInput.value
+  )
 
-  const todo = {
-    id: ++taskCounter,
-    category: {
-      documentId: categoryId,
-      description: categorySelect.selectedOptions[selectCategory.selectedIndex].text
-    },
-    description,
-    deadline,
-    done: false
+  if(response.error) {
+    feedbackP.innerText = response.error.message
+    feedbackP.classList.remove('success')
+    feedbackP.classList.add('error')
+  } else {
+    feedbackP.classList.remove('error')
+    feedbackP.classList.add('success')
+    let tempoRestante = 3
+    feedbackP.innerText = `Você será redirecionado em ${tempoRestante--} segundos`
+    const timer = setInterval(() => {
+      feedbackP.innerText = `Você será redirecionado em ${tempoRestante} segundos`
+      tempoRestante -= 1
+    }, 1000)
+    setTimeout(() => {
+      clearInterval(timer)
+      location.assign('/src/pages/todo.html')
+    } , tempoRestante*1000)
+    
   }
 
-
-  try {
-    const insertedTask = await createTask(todo)
-    todos.push(insertedTask)
-    updateTodos()
-    descriptionInput.value = ''
-  } catch (error) {
-    console.log(error)
-  } 
-
 })
+

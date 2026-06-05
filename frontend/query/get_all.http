@@ -1,3 +1,5 @@
-GET http://localhost:1337/api/tasks/
+GET http://localhost:1337/api/tasks/?populate[0]=category&populate[1]=owner
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgwNzAxNDUxLCJleHAiOjE3ODMyOTM0NTF9.aWNZjsupsImuxPfaHE7jq_nyi8yS3bVcsL5jFVmYr6w
 
+//bcuidld7s2xz2ov8ueqcrd7c

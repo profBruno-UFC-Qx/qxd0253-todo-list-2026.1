@@ -30,3 +30,20 @@
 .category.trabalho {
   background-color: rgb(226, 43, 43);
 }
+
+#feedback {
+  display: none;
+  padding: 2%;
+  border-radius: 20px;
+  color: white;
+}
+
+#feedback.error {
+  background-color: red;
+  display: block;
+}
+
+#feedback.success {
+  background-color: green;
+  display: block;
+}

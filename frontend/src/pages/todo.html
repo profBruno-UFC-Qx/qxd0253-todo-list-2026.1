@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>todolist</title>
+    <link rel="stylesheet" href="../../src/style.css">
+  </head>
+  <body>
+    <form>
+    <label for="category"> Categoria: </label>
+    <select id="category" required>
+    </select>
+
+    <label for="description"> Descrição: </label>
+    <input type="text" id="description" required>
+
+    <label for="deadline"> Prazo: </label>
+    <input type="date" id="deadline">
+
+    <input type="submit">
+  </form>
+
+  <dialog>
+    <p>Tem certeza que você deseja apagar?</p>
+    <menu>
+      <button id="cancel" type="reset">Cancel</button>
+      <button id="confirm" type="submit">Confirm</button>
+    </menu>
+  </dialog>
+
+  <section>
+    <h1>Tarefas</h1>
+    <hr>
+    <div id="tasks">
+
+    </div>
+  </section>
+    <script type="module" src="todo.ts"></script>
+  </body>
+</html>

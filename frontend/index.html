@@ -8,35 +8,26 @@
     <link rel="stylesheet" href="src/style.css">
   </head>
   <body>
-    <form>
-    <label for="category"> Categoria: </label>
-    <select id="category" required>
-    </select>
 
-    <label for="description"> Descrição: </label>
-    <input type="text" id="description" required>
+    <p id="feedback"></p>
+    
+    <fieldset>
+      <legend>Faça seu login</legend>
+      <form>
+        <div>
+          <label for="username">Login:</label>
+          <input type="text" id="username" required>
+        </div>
 
-    <label for="deadline"> Prazo: </label>
-    <input type="date" id="deadline">
+        <div>
+          <label for="password">Password:</label>
+          <input type="password" id="password" required minlength="6">
+        </div>
 
-    <input type="submit">
-  </form>
-
-  <dialog>
-    <p>Tem certeza que você deseja apagar?</p>
-    <menu>
-      <button id="cancel" type="reset">Cancel</button>
-      <button id="confirm" type="submit">Confirm</button>
-    </menu>
-  </dialog>
-
-  <section>
-    <h1>Tarefas</h1>
-    <hr>
-    <div id="tasks">
-
-    </div>
-  </section>
+        <input type="submit">
+    
+      </form>
+    </fieldset>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
