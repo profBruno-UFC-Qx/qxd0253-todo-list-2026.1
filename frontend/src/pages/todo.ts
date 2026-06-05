@@ -41,7 +41,7 @@ async function loadTasks() {
     todos = await todoService.getAll();
     updateTodos();
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -71,7 +71,6 @@ function createRemoveButton(todo: Todo): HTMLButtonElement {
     async function deleteTaskListener() {
       try {
         await todoService.delete(todo.documentId);
-        console.log("tyeste");
         if (
           removeButton.parentElement &&
           removeButton.parentElement.parentElement
@@ -80,7 +79,7 @@ function createRemoveButton(todo: Todo): HTMLButtonElement {
           removeButton.parentElement.parentElement.remove();
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
       confirmDialog.close();
     }
@@ -120,7 +119,7 @@ function createEditButton(
         container.contentEditable = "false";
         checkbox.disabled = false;
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }
     isEditing = !isEditing;
@@ -191,6 +190,6 @@ form.addEventListener("submit", async (event) => {
     updateTodos();
     descriptionInput.value = "";
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 });

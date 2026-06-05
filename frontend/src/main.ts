@@ -10,16 +10,12 @@ const authService = new AuthenticationService()
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
 
-  const response = await authService.login(
-    usernameInput.value,
-    passwordInput.value
-  )
+  try {
+    await authService.login(
+      usernameInput.value,
+      passwordInput.value
+    )
 
-  if(response.error) {
-    feedbackP.innerText = response.error.message
-    feedbackP.classList.remove('success')
-    feedbackP.classList.add('error')
-  } else {
     feedbackP.classList.remove('error')
     feedbackP.classList.add('success')
     let tempoRestante = 3
@@ -31,9 +27,12 @@ form.addEventListener('submit', async (event) => {
     setTimeout(() => {
       clearInterval(timer)
       location.assign('/src/pages/todo.html')
-    } , tempoRestante*1000)
-    
-  }
+    } , 3000)
 
+  } catch (error) {
+    feedbackP.innerText = (error as Error).message
+    feedbackP.classList.remove('success')
+    feedbackP.classList.add('error')
+  }
 })
 

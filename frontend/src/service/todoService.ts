@@ -1,4 +1,4 @@
-import { BASE_URL } from "./api";
+import { apiFetch } from "./api";
 import type {
   Todo,
   StrapiCollectionResponse,
@@ -7,16 +7,10 @@ import type {
 
 export class TodoService {
   async getAll(): Promise<Todo[]> {
-    const url = `${BASE_URL}/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${localStorage.getItem('usernameId')}`;
-    const response = await fetch(url, {
-      headers: {
-        "Authorization": `Bearer ${localStorage.getItem('jwt')}`,
-      }
-    });
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-    const result: StrapiCollectionResponse<Todo> = await response.json();
+    const usernameId = localStorage.getItem('usernameId');
+    const result = await apiFetch<StrapiCollectionResponse<Todo>>(
+      `/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${usernameId}`
+    );
     return result.data;
   }
 
@@ -26,13 +20,8 @@ export class TodoService {
     done,
     deadline,
   }: Omit<Todo, "id" | "documentId">): Promise<Todo> {
-    const url = `${BASE_URL}/tasks/`;
-    const response = await fetch(url, {
+    const strapiResponse = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>("/tasks", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${localStorage.getItem('jwt')}`,
-        "Content-type": "application/json",
-      },
       body: JSON.stringify({
         data: {
           description,
@@ -43,25 +32,13 @@ export class TodoService {
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-
-    const strapiResponse: StrapiSingleResponse<Omit<Todo, "category">> =
-      await response.json();
     return { ...strapiResponse.data, category };
   }
 
-  async delete(id: string) {
-    const url = `${BASE_URL}/tasks/${id}`;
-
-    const response = await fetch(url, {
+  async delete(id: string): Promise<void> {
+    await apiFetch(`/tasks/${id}`, {
       method: "DELETE",
     });
-
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
   }
 
   async update(task: Todo): Promise<Todo> {
@@ -74,21 +51,14 @@ export class TodoService {
       },
     };
 
-    const url = `${BASE_URL}/tasks/${task.documentId}`;
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    const strapiResponse = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>(
+      `/tasks/${task.documentId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-
-    const strapiResponse: StrapiSingleResponse<Omit<Todo, "category">> =
-      await response.json();
-    return { ...strapiResponse.data, ...{ category: task.category } };
+    return { ...strapiResponse.data, category: task.category };
   }
 }
