@@ -10,29 +10,28 @@ const authService = new AuthenticationService()
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
 
-  try {
-    await authService.login(
-      usernameInput.value,
-      passwordInput.value
-    )
+  const result = await authService.login(
+    usernameInput.value,
+    passwordInput.value
+  )
 
-    feedbackP.classList.remove('error')
-    feedbackP.classList.add('success')
-    let tempoRestante = 3
-    feedbackP.innerText = `Você será redirecionado em ${tempoRestante--} segundos`
-    const timer = setInterval(() => {
-      feedbackP.innerText = `Você será redirecionado em ${tempoRestante} segundos`
-      tempoRestante -= 1
-    }, 1000)
-    setTimeout(() => {
-      clearInterval(timer)
-      location.assign('/src/pages/todo.html')
-    } , 3000)
-
-  } catch (error) {
-    feedbackP.innerText = (error as Error).message
+  if (!result.success) {
+    feedbackP.innerText = result.error.message
     feedbackP.classList.remove('success')
     feedbackP.classList.add('error')
+    return
   }
-})
 
+  feedbackP.classList.remove('error')
+  feedbackP.classList.add('success')
+  let tempoRestante = 3
+  feedbackP.innerText = `Você será redirecionado em ${tempoRestante--} segundos`
+  const timer = setInterval(() => {
+    feedbackP.innerText = `Você será redirecionado em ${tempoRestante} segundos`
+    tempoRestante -= 1
+  }, 1000)
+  setTimeout(() => {
+    clearInterval(timer)
+    location.assign('/src/pages/todo.html')
+  } , 3000)
+})

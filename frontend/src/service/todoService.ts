@@ -3,15 +3,17 @@ import type {
   Todo,
   StrapiCollectionResponse,
   StrapiSingleResponse,
+  Result,
 } from "../types";
 
 export class TodoService {
-  async getAll(): Promise<Todo[]> {
+  async getAll(): Promise<Result<Todo[]>> {
     const usernameId = localStorage.getItem('usernameId');
     const result = await apiFetch<StrapiCollectionResponse<Todo>>(
       `/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${usernameId}`
     );
-    return result.data;
+    if (!result.success) return result;
+    return { success: true, data: result.data.data };
   }
 
   async create({
@@ -19,8 +21,8 @@ export class TodoService {
     category,
     done,
     deadline,
-  }: Omit<Todo, "id" | "documentId">): Promise<Todo> {
-    const strapiResponse = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>("/tasks", {
+  }: Omit<Todo, "id" | "documentId">): Promise<Result<Todo>> {
+    const result = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>("/tasks", {
       method: "POST",
       body: JSON.stringify({
         data: {
@@ -32,16 +34,20 @@ export class TodoService {
       }),
     });
 
-    return { ...strapiResponse.data, category };
+    if (!result.success) return result;
+    return { success: true, data: { ...result.data.data, category } };
   }
 
-  async delete(id: string): Promise<void> {
-    await apiFetch(`/tasks/${id}`, {
+  async delete(id: string): Promise<Result<void>> {
+    const result = await apiFetch<void>(`/tasks/${id}`, {
       method: "DELETE",
     });
+    
+    if (!result.success) return result;
+    return { success: true, data: undefined as any };
   }
 
-  async update(task: Todo): Promise<Todo> {
+  async update(task: Todo): Promise<Result<Todo>> {
     const body = {
       data: {
         description: task.description,
@@ -51,7 +57,7 @@ export class TodoService {
       },
     };
 
-    const strapiResponse = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>(
+    const result = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>(
       `/tasks/${task.documentId}`,
       {
         method: "PUT",
@@ -59,6 +65,7 @@ export class TodoService {
       }
     );
 
-    return { ...strapiResponse.data, category: task.category };
+    if (!result.success) return result;
+    return { success: true, data: { ...result.data.data, category: task.category } };
   }
 }

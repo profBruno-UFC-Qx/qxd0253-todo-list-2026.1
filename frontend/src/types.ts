@@ -56,4 +56,15 @@ export type LoginResponse = {
   user: User;
 }
 
+export type AppError = {
+  message: string;
+  status?: number;
+  details?: any;
+};
+
+export type Success<T> = { success: true; data: T };
+export type Failure = { success: false; error: AppError };
+
+export type Result<T> = Success<T> | Failure;
+
 

@@ -23,25 +23,26 @@ const todoService = new TodoService();
 const categoryService = new CategoryService();
 
 async function initilizeCategories() {
-  try {
-    const categories = await categoryService.getAll();
-    for (let category of categories) {
-      let option = document.createElement("option");
-      option.value = category.documentId;
-      option.innerText = category.description;
-      categorySelect.append(option);
-    }
-  } catch (error) {
-    console.error((error as Error).message);
-  }
+  const result = await categoryService.getAll();
+  if (!result.success) {
+    console.error(result.error.message);
+  } else {
+    for (let category of result.data) {
+        let option = document.createElement("option");
+        option.value = category.documentId;
+        option.innerText = category.description;
+        categorySelect.append(option);
+      }
+  }  
 }
 
 async function loadTasks() {
-  try {
-    todos = await todoService.getAll();
+  const result = await todoService.getAll();
+  if (!result.success) {
+    console.error(result.error.message);
+  } else {
+    todos = result.data;
     updateTodos();
-  } catch (error) {
-    console.error(error);
   }
 }
 
@@ -49,8 +50,14 @@ function createCheckbox(todo: Todo): HTMLInputElement {
   const checkbox = document.createElement("input") as HTMLInputElement;
 
   checkbox.type = "checkbox";
-  checkbox.addEventListener("change", () => {
-    todo.done = !todo.done;
+  checkbox.addEventListener("change", async () => {
+    todo.done = checkbox.checked;
+    const result = await todoService.update(todo);
+    if (!result.success) {
+      console.error(result.error.message);
+      checkbox.checked = !checkbox.checked; 
+      todo.done = !todo.done;
+    }
   });
 
   return checkbox;
@@ -69,8 +76,10 @@ function createRemoveButton(todo: Todo): HTMLButtonElement {
   removeButton.innerText = "🗑️";
   removeButton.addEventListener("click", () => {
     async function deleteTaskListener() {
-      try {
-        await todoService.delete(todo.documentId);
+      const result = await todoService.delete(todo.documentId);
+      if (!result.success) {
+        console.error(result.error.message);
+      } else {
         if (
           removeButton.parentElement &&
           removeButton.parentElement.parentElement
@@ -78,8 +87,6 @@ function createRemoveButton(todo: Todo): HTMLButtonElement {
           todos = todos.filter((t) => t.id != todo.id);
           removeButton.parentElement.parentElement.remove();
         }
-      } catch (error) {
-        console.error(error);
       }
       confirmDialog.close();
     }
@@ -111,15 +118,20 @@ function createEditButton(
       checkbox.disabled = true;
       editButton.innerText = "💾";
     } else {
-      try {
-        todo.description = container.innerText;
-        const updatedTodo = await todoService.update(todo);
-        todos = todos.filter((t) => (t.id == updatedTodo.id ? updatedTodo : t));
+      const originalDescription = todo.description;
+      todo.description = container.innerText;
+      
+      const result = await todoService.update(todo);
+      if (!result.success) {
+        console.error(result.error.message);
+        todo.description = originalDescription;
+        container.innerText = originalDescription;
+      } else {
+        const updatedTodo = result.data;
+        todos = todos.map((t) => (t.id == updatedTodo.id ? updatedTodo : t));
         editButton.innerText = "✏️";
         container.contentEditable = "false";
         checkbox.disabled = false;
-      } catch (error) {
-        console.error(error);
       }
     }
     isEditing = !isEditing;
@@ -130,6 +142,7 @@ function createEditButton(
 
 function createUiTask(todo: Todo) {
   const checkbox = createCheckbox(todo);
+  checkbox.checked = todo.done;
 
   const labelTask = document.createElement("label") as HTMLLabelElement;
 
@@ -184,12 +197,14 @@ form.addEventListener("submit", async (event) => {
     done: false,
   };
 
-  try {
-    const insertedTask = await todoService.create(todo);
-    todos.push(insertedTask);
-    updateTodos();
-    descriptionInput.value = "";
-  } catch (error) {
-    console.error(error);
+  const result = await todoService.create(todo);
+  if (!result.success) {
+    console.error(result.error.message);
+    return;
   }
+  
+  const insertedTask = result.data;
+  todos.push(insertedTask);
+  updateTodos();
+  descriptionInput.value = "";
 });
