@@ -3,6 +3,27 @@ import type { LoginResponse, User, Result } from "../types";
 
 export class AuthenticationService {
   async login(identifier: string, password: string): Promise<Result<User>> {
+    const authResult = await this.authenticate(identifier, password);
+    
+    if (!authResult.success) {
+      return authResult;
+    }
+
+    this.saveToken(authResult.data.jwt);
+
+    const userResult = await this.fetchUserDetails();
+    
+    if (!userResult.success) {
+      this.logout();
+      return userResult;
+    }
+
+    this.saveUserData(userResult.data);
+
+    return { success: true, data: userResult.data };
+  }
+
+  private async authenticate(identifier: string, password: string): Promise<Result<LoginResponse>> {
     const url = `${BASE_URL}/auth/local`;
     
     try {
@@ -11,44 +32,15 @@ export class AuthenticationService {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            identifier, 
-            password
-        })
+        body: JSON.stringify({ identifier, password })
       });
 
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (e) {
-          errorData = {};
-        }
-        return {
-          success: false,
-          error: {
-            message: errorData.error?.message || "Login failed",
-            status: response.status,
-            details: errorData
-          }
-        };
+        return await this.handleAuthError(response);
       }
 
       const loginResponse: LoginResponse = await response.json();
-      localStorage.setItem('jwt', loginResponse.jwt);
-
-      const roleResult = await apiFetch<User>("/users/me?populate=role");
-
-      if (!roleResult.success) {
-        localStorage.removeItem('jwt');
-        return roleResult;
-      }
-
-      localStorage.setItem('username', roleResult.data.username);
-      localStorage.setItem('usernameId', roleResult.data.documentId);
-      localStorage.setItem('role', roleResult.data.role.name);
-
-      return { success: true, data: roleResult.data };
+      return { success: true, data: loginResponse };
     } catch (error) {
       return {
         success: false,
@@ -59,10 +51,43 @@ export class AuthenticationService {
     }
   }
 
+  private async handleAuthError(response: Response): Promise<Result<any>> {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = {};
+    }
+    return {
+      success: false,
+      error: {
+        message: errorData.error?.message || "Login failed",
+        status: response.status,
+        details: errorData
+      }
+    };
+  }
+
+  private async fetchUserDetails(): Promise<Result<User>> {
+    return await apiFetch<User>("/users/me?populate=role");
+  }
+
+  private saveToken(jwt: string): void {
+    localStorage.setItem('jwt', jwt);
+  }
+
+  private saveUserData(user: User): void {
+    localStorage.setItem('username', user.username);
+    localStorage.setItem('userId', user.documentId);
+    if (user.role) {
+      localStorage.setItem('role', user.role.name);
+    }
+  }
+
   logout(): void {
     localStorage.removeItem('jwt');
     localStorage.removeItem('username');
-    localStorage.removeItem('usernameId');
+    localStorage.removeItem('userId');
     localStorage.removeItem('role');
   }
 }

@@ -8,9 +8,9 @@ import type {
 
 export class TodoService {
   async getAll(): Promise<Result<Todo[]>> {
-    const usernameId = localStorage.getItem('usernameId');
+    const userId = localStorage.getItem('userId');
     const result = await apiFetch<StrapiCollectionResponse<Todo>>(
-      `/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${usernameId}`
+      `/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${userId}`
     );
     if (!result.success) return result;
     return { success: true, data: result.data.data };
