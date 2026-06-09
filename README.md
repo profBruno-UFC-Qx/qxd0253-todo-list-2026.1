@@ -1,143 +1,126 @@
 # 📝 Todo List (Lista de Tarefas) - TypeScript Vanilla + Strapi API
 
-Este é um projeto didático construído com HTML, CSS e **TypeScript puro (Vanilla)** no front-end, agora integrado com uma **API REST** construída com **Strapi** no back-end. 
+Este é um projeto didático construído com HTML, CSS e **TypeScript puro (Vanilla)** no front-end, integrado com uma **API REST** construída com **Strapi** no back-end. 
 
-O objetivo deste projeto é ensinar os fundamentos da manipulação da página web (DOM), tipagem de dados, gerenciamento de eventos, requisições HTTP assíncronas (Fetch API) e organização de código.
+O objetivo deste projeto é ensinar os fundamentos da manipulação da página web (DOM), tipagem de dados, gerenciamento de eventos, requisições HTTP assíncronas (Fetch API), organização de código e padrões de arquitetura (Service Pattern e Result Pattern).
 
-## 🏗️ Nova Arquitetura
+## 🏗️ Arquitetura
 
-O projeto foi reestruturado para adotar uma arquitetura de cliente-servidor, sendo dividido em duas pastas principais:
+O projeto adota uma arquitetura cliente-servidor:
 
 - **`frontend/`**: Contém a aplicação visual interativa, escrita em TypeScript Vanilla e empacotada com Vite. 
-- **`backend/`**: Contém a API REST completa, desenvolvida usando o Headless CMS **Strapi**. É aqui que os dados (Tarefas e Categorias) são persistidos e gerenciados de forma robusta.
+- **`backend/`**: Contém a API REST completa, desenvolvida usando o Headless CMS **Strapi**. É aqui que os dados (Tarefas, Categorias e Usuários) são persistidos e gerenciados de forma robusta.
 
-### ✨ Boas Práticas Utilizadas
+### ✨ Boas Práticas e Evolução do Projeto
 
-1. **Separação de Responsabilidades (Client/Server)**: O front-end apenas consome os dados e exibe na interface, enquanto o back-end é inteiramente responsável pela persistência e regras de banco de dados.
-2. **Separação de Tipos**: Os tipos do TypeScript foram movidos para o arquivo `src/types.ts`, mantendo a lógica do `main.ts` mais limpa e focada.
-3. **Comunicação Assíncrona (Async/Await)**: As operações de rede (CRUD das tarefas) são gerenciadas de maneira assíncrona com a Fetch API e blocos `try/catch` para tratamento de erros.
-4. **Tipagem de Respostas de API**: Tipos genéricos (como `StrapiCollectionResponse<T>`) foram criados para mapear o formato padrão de resposta do Strapi de maneira segura e reutilizável.
+Ao longo do desenvolvimento, o projeto evoluiu para adotar práticas mais avançadas e escaláveis de estruturação de código:
+
+1. **Service Layer Pattern (Camada de Serviços)**: Toda a lógica de comunicação com a API foi extraída dos arquivos de interface visual (`main.ts`, `todo.ts`) e movida para classes de serviço dedicadas (`ApiService`, `TodoService`, `AuthenticationService`). Isso mantém a camada visual limpa e focada apenas na interação com o DOM.
+2. **Result Pattern (Tratamento de Erros)**: Em vez de espalhar blocos `try/catch` genéricos pelo código, implementamos o padrão de retorno `Result`. Funções que podem falhar retornam um objeto indicando sucesso (`{ success: true, data: T }`) ou falha (`{ success: false, error: AppError }`). Isso obriga o desenvolvedor a tratar erros explicitamente e melhora muito a previsibilidade do código.
+3. **Autenticação e Controle de Sessão**: Implementação de login seguro utilizando JWT (JSON Web Tokens). O `SessionService` isola a responsabilidade de gerenciar o `localStorage`, enquanto o `ApiService` se encarrega de injetar o token nas requisições. No backend, cada Tarefa agora é vinculada ao Usuário que a criou (Owner).
+4. **Gerenciamento Centralizado de Requisições**: Todo o acesso à rede agora passa pelo `ApiService`. Assim, headers, tratamentos de falhas HTTP (ex: transformar um código `404` ou `500` em um erro compreensível) e inserção de tokens são feitos em um só lugar.
 
 ---
 
 ## 🚀 O que vamos aprender com o front-end?
 
-Abaixo, detalhamos os principais conceitos utilizados no código (``frontend/src/main.ts`` e ``frontend/src/types.ts``) para que você entenda como a "mágica" acontece.
+Abaixo, destacamos as principais decisões arquiteturais e padrões implementados no código.
 
-### 1. Selecionando Elementos e Avisando o TypeScript (Type Assertion)
+### 1. Result Pattern: Tratamento Previsível de Erros
 
-O TypeScript é rigoroso e gosta de ter certeza sobre o que estamos manipulando. Quando buscamos um elemento no HTML (como o formulário ou um campo de texto), o TypeScript não sabe exatamente *qual* elemento foi retornado. Para resolver isso, usamos a palavra `as` para fazer uma "Afirmação de Tipo" (Type Assertion).
+Em aplicações reais, requisições falham (queda de internet, servidor fora do ar, validação de campos) e precisamos saber o motivo. Criamos um tipo genérico `Result<T>` que nos força a verificar se uma operação deu certo antes de acessar os dados, eliminando surpresas com valores indefinidos.
 
 ```typescript
-// Buscamos o formulário na tela e afirmamos que ele é um "HTMLFormElement"
-const form = document.querySelector("form") as HTMLFormElement;
+// frontend/src/types.ts
+export type AppError = {
+  message: string;
+  status?: number;
+  details?: any;
+};
 
-// Buscamos o input de descrição e afirmamos que é um "HTMLInputElement"
-const descriptionInput = document.getElementById("description") as HTMLInputElement;
+export type Success<T> = { success: true; data: T };
+export type Failure = { success: false; error: AppError };
+
+// Qualquer função que pode falhar retorna um Result
+export type Result<T> = Success<T> | Failure;
 ```
 
-### 2. Criando Tipos para Integrar com a API (Type Alias)
+### 2. Service Layer Pattern: Desacoplando Lógica da Interface
 
-Organizamos nossos "moldes" em um arquivo separado (`types.ts`). Criamos um tipo `Todo` que já prevê os atributos que vêm do banco de dados do Strapi (como `documentId`).
+Para não misturarmos manipulação de botões com a lógica complexa de enviar dados pela rede, criamos serviços que lidam com cada responsabilidade de forma isolada. O `TodoService`, por exemplo, não sabe nada sobre HTML; ele apenas envia e recebe dados.
 
 ```typescript
-export type Category = {
-  documentId: string,
-  description: string,
-}
+// frontend/src/service/todoService.ts
+export class TodoService {
+  private apiService: ApiService;
+  // ...
 
-export type Todo = {
-  id: number,
-  documentId: string,
-  category: Category,
-  description: string,
-  deadline?: string
-  done: boolean
-}
+  async create(todo: Omit<Todo, "id" | "documentId">): Promise<Result<Todo>> {
+    const result = await this.apiService.fetch<StrapiSingleResponse<Todo>>("/tasks", {
+      method: "POST",
+      body: JSON.stringify({
+        data: {
+          description: todo.description,
+          category: todo.category.documentId,
+          done: todo.done,
+          deadline: todo.deadline || null,
+        },
+      }),
+    });
 
-// Criamos uma lista (array) que SÓ aceita objetos que sigam o formato "Todo"
-let todos: Todo[] = [];
+    if (!result.success) return result; // Se falhou, repassamos o erro imediatamente de forma limpa
+    
+    return { success: true, data: { ...result.data.data, category: todo.category } };
+  }
+}
 ```
 
-### 3. Interceptando Eventos e Consumindo a API (O Formulário)
+### 3. Interceptando Eventos e Tratando Resultados na Interface
 
-Interceptamos o envio do formulário. Agora, em vez de apenas inserir em uma lista na memória, enviamos os dados para a nossa API REST usando `fetch` de forma assíncrona (`async/await`).
+Graças aos Serviços e ao padrão Result, a lógica dos nossos formulários na interface fica muito mais concisa. Não há necessidade de criar grandes blocos `try/catch`; nós simplesmente chamamos o serviço e verificamos a flag `result.success`.
 
 ```typescript
+// frontend/src/pages/todo.ts
 form.addEventListener("submit", async (event) => {
-  // Impede o comportamento padrão do navegador
   event.preventDefault();
 
-  const categoryId = categorySelect.value;
-  const description = descriptionInput.value;
-  const deadline = dateInput.value;
-
-  // Montamos o objeto inicial (sem os IDs oficiais que virão do servidor)
   const todo = {
-    id: ++taskCounter,
-    category: {
-      documentId: categoryId,
-      description: categorySelect.selectedOptions[selectCategory.selectedIndex].text
-    },
-    description,
-    deadline,
-    done: false
+    // ... construção inicial do objeto da tarefa
   };
 
-  try {
-    // Enviamos para a API e esperamos a resposta com os dados definitivos
-    const insertedTask = await createTask(todo);
-    todos.push(insertedTask);
-    updateTodos();
-    descriptionInput.value = ''; // Limpa o campo
-  } catch (error) {
-    console.log(error);
-  } 
-});
-```
-
-### 4. Criando Elementos HTML Dinamicamente pelo TypeScript
-
-Ensinamos o TypeScript a construir os elementos visuais para cada nova tarefa que o usuário adiciona.
-
-```typescript
-function createCheckbox(todo: Todo): HTMLInputElement {
-  const checkbox = document.createElement('input') as HTMLInputElement;
+  // Delegamos a responsabilidade de comunicação com a API ao serviço
+  const result = await todoService.create(todo);
   
-  checkbox.type = 'checkbox';
-  checkbox.addEventListener('change', () => {
-    todo.done = !todo.done;
-  });
-
-  return checkbox;
-}
-```
-
-### 5. Trabalhando com a tag `<dialog>` (O Pop-up Nativo)
-
-Para apagar uma tarefa, usamos a tag `<dialog>` nativa do HTML, que serve para criar janelas flutuantes sem bibliotecas externas.
-
-```typescript
-removeButton.addEventListener('click', () => {
-  async function deleteTaskListener() {
-    try {
-       // Chamada à API para remover o item
-       await deleteTask(todo.documentId); 
-
-       if(removeButton.parentElement && removeButton.parentElement.parentElement) {
-          todos = todos.filter( t => t.id != todo.id);
-          removeButton.parentElement.parentElement.remove(); // Remove da tela
-        }
-    } catch(error) {
-      console.log(error);
-    }
-    confirmDialog.close();
+  // O TypeScript nos força a lidar com a falha primeiro
+  if (!result.success) {
+    console.error(result.error.message); // Exibe o erro ou mostra na tela para o usuário
+    return;
   }
   
-  confirmButtonDialog.addEventListener('click', deleteTaskListener);
-  // ...
-  confirmDialog.showModal(); 
+  // Por causa da checagem acima, o TypeScript agora garante que "result.data" existe com segurança
+  const insertedTask = result.data;
+  todos.push(insertedTask);
+  updateTodos();
 });
+```
+
+### 4. Gerenciamento Centralizado de Requisições (ApiService)
+
+Todas as chamadas para o backend (usando `fetch`) passam por um único local central: o método `fetch` da classe `ApiService`. Isso nos permite fazer configurações globais invisíveis para o resto da aplicação.
+
+```typescript
+// frontend/src/service/api.ts
+async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<Result<T>> {
+  const token = this.sessionService.getToken();
+  const headers = new Headers(options.headers || {});
+  
+  // O token de autenticação JWT é adicionado aqui! Nenhum outro serviço precisa se preocupar com isso.
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  // ... lógica centralizada do 'fetch' do navegador e padronização do retorno (Result)
+}
 ```
 
 ---
