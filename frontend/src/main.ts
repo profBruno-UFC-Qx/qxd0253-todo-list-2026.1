@@ -36,6 +36,6 @@ form.addEventListener('submit', async (event) => {
   }, 1000)
   setTimeout(() => {
     clearInterval(timer)
-    location.assign('/src/pages/todo.html')
+    location.assign('/todo.html')
   } , 3000)
 })

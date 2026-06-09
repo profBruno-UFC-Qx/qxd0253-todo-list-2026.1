@@ -4,30 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>todolist</title>
-    <link rel="stylesheet" href="src/style.css">
+    <title>To-Do List - Login</title>
+    <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
+    <div class="container">
+      <p id="feedback"></p>
+      
+      <fieldset>
+        <legend>Faça seu login</legend>
+        <form>
+          <div class="form-group">
+            <label for="username">Login:</label>
+            <input type="text" id="username" required placeholder="Seu usuário">
+          </div>
 
-    <p id="feedback"></p>
-    
-    <fieldset>
-      <legend>Faça seu login</legend>
-      <form>
-        <div>
-          <label for="username">Login:</label>
-          <input type="text" id="username" required>
-        </div>
+          <div class="form-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" required minlength="6" placeholder="Sua senha">
+          </div>
 
-        <div>
-          <label for="password">Password:</label>
-          <input type="password" id="password" required minlength="6">
-        </div>
-
-        <input type="submit">
-    
-      </form>
-    </fieldset>
+          <input type="submit" value="Entrar">
+      
+        </form>
+      </fieldset>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -151,6 +151,7 @@ function createUiTask(todo: Todo) {
   const labelTask = document.createElement("label") as HTMLLabelElement;
 
   const descriptionDiv = document.createElement("div");
+  descriptionDiv.classList.add("task-content");
   descriptionDiv.appendChild(checkbox);
 
   const spanDescription = document.createElement("span");
@@ -166,6 +167,7 @@ function createUiTask(todo: Todo) {
   descriptionDiv.append(spanCategory);
 
   const actionDiv = document.createElement("div");
+  actionDiv.classList.add("task-actions");
   const removeButton = createRemoveButton(todo);
   actionDiv.appendChild(removeButton);
 

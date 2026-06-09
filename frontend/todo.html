@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <form>
+        <div class="form-group">
+          <label for="category"> Categoria: </label>
+          <select id="category" required>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description"> Descrição: </label>
+          <input type="text" id="description" required placeholder="Digite a nova tarefa...">
+        </div>
+
+        <div class="form-group">
+          <label for="deadline"> Prazo: </label>
+          <input type="date" id="deadline">
+        </div>
+
+        <input type="submit" value="Adicionar Tarefa">
+      </form>
+
+      <dialog>
+        <p>Tem certeza que você deseja apagar esta tarefa?</p>
+        <menu>
+          <button id="cancel" type="reset">Cancelar</button>
+          <button id="confirm" type="submit">Confirmar</button>
+        </menu>
+      </dialog>
+
+      <section>
+        <h1>Minhas Tarefas</h1>
+        <hr>
+        <div id="tasks">
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/pages/todo.ts"></script>
+  </body>
+</html>
