@@ -1,11 +1,15 @@
 import { AuthenticationService } from "./service/authenticationService"
+import { SessionService } from "./service/sessionService"
+import { ApiService } from "./service/api"
 
 const form = document.querySelector('form') as HTMLFormElement
 const usernameInput = document.getElementById('username') as HTMLInputElement
 const passwordInput = document.getElementById('password') as HTMLInputElement
 const feedbackP = document.getElementById('feedback') as HTMLParagraphElement
 
-const authService = new AuthenticationService()
+const sessionService = new SessionService()
+const apiService = new ApiService(sessionService)
+const authService = new AuthenticationService(apiService, sessionService)
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault()

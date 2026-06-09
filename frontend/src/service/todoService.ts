@@ -1,4 +1,5 @@
-import { apiFetch } from "./api";
+import { ApiService } from "./api";
+import { SessionService } from "./sessionService";
 import type {
   Todo,
   StrapiCollectionResponse,
@@ -7,9 +8,17 @@ import type {
 } from "../types";
 
 export class TodoService {
+  private apiService: ApiService;
+  private sessionService: SessionService;
+
+  constructor(apiService: ApiService, sessionService: SessionService) {
+    this.apiService = apiService;
+    this.sessionService = sessionService;
+  }
+
   async getAll(): Promise<Result<Todo[]>> {
-    const userId = localStorage.getItem('userId');
-    const result = await apiFetch<StrapiCollectionResponse<Todo>>(
+    const userId = this.sessionService.getUserId();
+    const result = await this.apiService.fetch<StrapiCollectionResponse<Todo>>(
       `/tasks?populate[0]=category&populate[1]=owner&filters[owner][documentId][$eq]=${userId}`
     );
     if (!result.success) return result;
@@ -22,7 +31,7 @@ export class TodoService {
     done,
     deadline,
   }: Omit<Todo, "id" | "documentId">): Promise<Result<Todo>> {
-    const result = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>("/tasks", {
+    const result = await this.apiService.fetch<StrapiSingleResponse<Omit<Todo, "category">>>("/tasks", {
       method: "POST",
       body: JSON.stringify({
         data: {
@@ -39,7 +48,7 @@ export class TodoService {
   }
 
   async delete(id: string): Promise<Result<void>> {
-    const result = await apiFetch<void>(`/tasks/${id}`, {
+    const result = await this.apiService.fetch<void>(`/tasks/${id}`, {
       method: "DELETE",
     });
     
@@ -57,7 +66,7 @@ export class TodoService {
       },
     };
 
-    const result = await apiFetch<StrapiSingleResponse<Omit<Todo, "category">>>(
+    const result = await this.apiService.fetch<StrapiSingleResponse<Omit<Todo, "category">>>(
       `/tasks/${task.documentId}`,
       {
         method: "PUT",

@@ -1,93 +1,52 @@
-import { BASE_URL, apiFetch } from "./api";
+import { ApiService } from "./api";
 import type { LoginResponse, User, Result } from "../types";
+import { SessionService } from "./sessionService";
 
 export class AuthenticationService {
+  private apiService: ApiService;
+  private sessionService: SessionService;
+
+  constructor(apiService: ApiService, sessionService: SessionService) {
+    this.apiService = apiService;
+    this.sessionService = sessionService;
+  }
+
   async login(identifier: string, password: string): Promise<Result<User>> {
+    this.logout()
     const authResult = await this.authenticate(identifier, password);
     
     if (!authResult.success) {
       return authResult;
     }
 
-    this.saveToken(authResult.data.jwt);
-
-    const userResult = await this.fetchUserDetails();
+    const userResult = await this.fetchUserDetails(authResult.data.jwt);
     
     if (!userResult.success) {
       this.logout();
       return userResult;
     }
 
-    this.saveUserData(userResult.data);
+    this.sessionService.saveSession(authResult.data.jwt, userResult.data);
 
     return { success: true, data: userResult.data };
   }
 
   private async authenticate(identifier: string, password: string): Promise<Result<LoginResponse>> {
-    const url = `${BASE_URL}/auth/local`;
-    
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ identifier, password })
-      });
+    return await this.apiService.fetch<LoginResponse>("/auth/local", {
+      method: "POST",
+      body: JSON.stringify({ identifier, password })
+    });
+  }
 
-      if (!response.ok) {
-        return await this.handleAuthError(response);
+  private async fetchUserDetails(token: string): Promise<Result<User>> {
+    return await this.apiService.fetch<User>("/users/me?populate=role", {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-
-      const loginResponse: LoginResponse = await response.json();
-      return { success: true, data: loginResponse };
-    } catch (error) {
-      return {
-        success: false,
-        error: {
-          message: error instanceof Error ? error.message : String(error)
-        }
-      };
-    }
-  }
-
-  private async handleAuthError(response: Response): Promise<Result<any>> {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = {};
-    }
-    return {
-      success: false,
-      error: {
-        message: errorData.error?.message || "Login failed",
-        status: response.status,
-        details: errorData
-      }
-    };
-  }
-
-  private async fetchUserDetails(): Promise<Result<User>> {
-    return await apiFetch<User>("/users/me?populate=role");
-  }
-
-  private saveToken(jwt: string): void {
-    localStorage.setItem('jwt', jwt);
-  }
-
-  private saveUserData(user: User): void {
-    localStorage.setItem('username', user.username);
-    localStorage.setItem('userId', user.documentId);
-    if (user.role) {
-      localStorage.setItem('role', user.role.name);
-    }
+    });
   }
 
   logout(): void {
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('role');
+    this.sessionService.clearSession();
   }
 }

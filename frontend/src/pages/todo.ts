@@ -1,4 +1,6 @@
+import { ApiService } from "../service/api";
 import { CategoryService } from "../service/categoryService";
+import { SessionService } from "../service/sessionService";
 import { TodoService } from "../service/todoService";
 import type { Todo } from "../types";
 
@@ -19,8 +21,10 @@ const confirmButtonDialog = document.getElementById(
 
 const divTasks = document.getElementById("tasks") as HTMLDivElement;
 
-const todoService = new TodoService();
-const categoryService = new CategoryService();
+const sessionService = new SessionService()
+const apiService = new ApiService(sessionService)
+const todoService = new TodoService(apiService, sessionService);
+const categoryService = new CategoryService(apiService);
 
 async function initilizeCategories() {
   const result = await categoryService.getAll();
